@@ -61,11 +61,17 @@ def _strformat(value, format_spec=""):
     if sign not in '-' and value >= 0:
         # sign in (' ', '+')
         rv = sign + rv
-    if not width:
-        return rv
-    zero = (width[0] == '0')
-    width = int(width)
+    if width:
+        zero = (width[0] == '0')
+        width = int(width)
+    else:
+        zero = False
+        width = 0
+    # Fastpath when alignment is not required
     if width <= len(rv):
+        if not is_numeric and (align == '=' or (zero and not align)):
+            raise ValueError("'=' alignment not allowed in string format "
+                             "specifier")
         return rv
     fill, align = align[:-1], align[-1:]
     if not fill:
@@ -155,6 +161,11 @@ class FormattableString(object):
         if sep and not conversion:
             raise ValueError("end of format while looking for "
                              "conversion specifier")
+        if len(conversion) > 1:
+            raise ValueError("expected ':' after format specifier")
+        if conversion not in 'rsa':
+            raise ValueError("Unknown conversion specifier %s" %
+                             str(conversion))
         name_parts = _field_part_re.findall(literal)
         if literal[:1] in '.[':
             # Auto-numbering
@@ -173,14 +184,17 @@ class FormattableString(object):
                     raise ValueError("cannot switch from automatic field "
                                      "numbering to manual field specification")
                 self._index = None
+        empty_attribute = False
         for k, v, tail in name_parts:
             if not v:
-                raise ValueError("Empty attribute in format string")
+                empty_attribute = True
             if tail:
                 raise ValueError("Only '.' or '[' may follow ']' "
                                  "in format field specifier")
         if name_parts and k == '[' and not literal[-1] == ']':
             raise ValueError("Missing ']' in format string")
+        if empty_attribute:
+            raise ValueError("Empty attribute in format string")
         if '{' in format_spec:
             format_spec = _format_sub_re.sub(self._prepare, format_spec)
             rv = (name_parts, conversion, format_spec)

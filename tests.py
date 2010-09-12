@@ -297,17 +297,17 @@ class BaseFormatterTest(unittest.TestCase):
         # assert_raises(ValueError, '{{ {{{0}}', 0)
         # assert_raises(ValueError, '{0}}', 0)
         assert_raises(KeyError, '{foo}', bar=3)
-        # assert_raises(ValueError, '{0!x}', 3)
-        # assert_raises(ValueError, '{0!}', 0)
-        # assert_raises(ValueError, '{0!rs}', 0)
+        assert_raises(ValueError, '{0!x}', 3)
+        assert_raises(ValueError, '{0!}', 0)
+        assert_raises(ValueError, '{0!rs}', 0)
         assert_raises(ValueError, '{!}')
         # assert_raises(IndexError, '{:}')          # KeyError
         # assert_raises(IndexError, '{:s}')         # KeyError
         # assert_raises(IndexError, '{}')           # KeyError
 
         # issue 6089
-        # assert_raises(ValueError, '{0[0]x}', [None])
-        # assert_raises(ValueError, '{0[0](10)}', [None])
+        assert_raises(ValueError, '{0[0]x}', [None])
+        assert_raises(ValueError, '{0[0](10)}', [None])
 
         # can't have a replacement on the field name portion
         assert_raises(TypeError, '{0[{1}]}', 'abcdefg', 4)
@@ -318,9 +318,9 @@ class BaseFormatterTest(unittest.TestCase):
         #               0, 1, 2, 3, 4, 5, 6, 7)
 
         # string format spec errors
-        # assert_raises(ValueError, '{0:-s}', '')
-        # self.assertRaises(ValueError, _strformat, "", "-")
-        # assert_raises(ValueError, '{0:=s}', '')
+        assert_raises(ValueError, '{0:-s}', '')
+        self.assertRaises(ValueError, _strformat, "", "-")
+        assert_raises(ValueError, '{0:=s}', '')
 
     def test_format_auto_numbering(self):
         # from Python 2.7 test suite
