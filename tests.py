@@ -82,7 +82,6 @@ class BaseFormatterTest(unittest.TestCase):
     def test_format(self):
         # from Python 2.7 test suite
         test = self._check_format
-        assert_raises = self._check_raises
 
         # Safety check
         self.assertTrue(hasattr(f(''), 'format'))
@@ -270,6 +269,38 @@ class BaseFormatterTest(unittest.TestCase):
         test('hello     ', '{0:{width}.{precision}s}',
              'hello world', width='10', precision='5')
 
+    def test_format_auto_numbering(self):
+        # from Python 2.7 test suite
+        test = self._check_format
+
+        class C:
+            def __init__(self, x=100):
+                self._x = x
+
+            def __format__(self, spec):
+                return spec
+
+        test('10', '{}', 10)
+        test('s    ', '{:5}', 's')
+        test("'s'", '{!r}', 's')
+        test('10', '{._x}', C(10))
+        test('2', '{[1]}', [1, 2])
+        test('4', '{[a]}', {'a': 4, 'b': 2})
+        test('a0b1c', 'a{}b{}c', 0, 1)
+
+        test('a    x     b', 'a{:{}}b', 'x', '^10')
+        test('a0x14b', 'a{:{}x}b', 20, '#')
+
+        # can mix and match auto-numbering and named
+        test('test4', '{f}{}', 4, f='test')
+        test('4test', '{}{f}', 4, f='test')
+        test(' 1g3', '{:{f}}{g}{}', 1, 3, g='g', f=2)
+        test(' 14g', '{f:{}}{}{g}', 2, 4, f=1, g='g')
+
+    def test_format_errors(self):
+        # from Python 2.7 test suite
+        assert_raises = self._check_raises
+
         # test various errors
         # XXX failing tests are commented
         # assert_raises(ValueError, '{')
@@ -322,40 +353,11 @@ class BaseFormatterTest(unittest.TestCase):
         self.assertRaises(ValueError, _strformat, "", "-")
         assert_raises(ValueError, '{0:=s}', '')
 
-    def test_format_auto_numbering(self):
-        # from Python 2.7 test suite
-        test = self._check_format
-        assert_raises = self._check_raises
-
-        class C:
-            def __init__(self, x=100):
-                self._x = x
-
-            def __format__(self, spec):
-                return spec
-
-        test('10', '{}', 10)
-        test('s    ', '{:5}', 's')
-        test("'s'", '{!r}', 's')
-        test('10', '{._x}', C(10))
-        test('2', '{[1]}', [1, 2])
-        test('4', '{[a]}', {'a': 4, 'b': 2})
-        test('a0b1c', 'a{}b{}c', 0, 1)
-
-        test('a    x     b', 'a{:{}}b', 'x', '^10')
-        test('a0x14b', 'a{:{}x}b', 20, '#')
-
         # can't mix and match numbering and auto-numbering
         assert_raises(ValueError, '{}{1}', 1, 2)
         assert_raises(ValueError, '{1}{}', 1, 2)
         assert_raises(ValueError, '{:{1}}', 1, 2)
         assert_raises(ValueError, '{0:{}}', 1, 2)
-
-        # can mix and match auto-numbering and named
-        test('test4', '{f}{}', 4, f='test')
-        test('4test', '{}{f}', 4, f='test')
-        test(' 1g3', '{:{f}}{g}{}', 1, 3, g='g', f=2)
-        test(' 14g', '{f:{}}{}{g}', 2, 4, f=1, g='g')
 
     def test_incompatibilities(self):
         # Differences with Python 2.7
