@@ -1,0 +1,5 @@
+StringFormat.egg-info
+*.pyc
+*.pyo
+build
+dist

@@ -1,0 +1,11 @@
+StringFormat
+============
+
+StringFormat is an independent port of the Python 3 advanced string formatting
+to Python 2.5.  This implementation is pure Python.
+
+
+The advanced string formatting is officially included in the language
+since Python 2.6.
+
+http://docs.python.org/whatsnew/2.6.html#pep-3101-advanced-string-formatting
