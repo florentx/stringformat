@@ -28,12 +28,10 @@ class BaseFormatterTest(unittest.TestCase):
         # test both with and without the trailing 's'
         self.assertEqual(_strformat(value, fmt), expected)
         self.assertEqual(_strformat(value, fmt + 's'), expected)
-        return expected, fmt, value
 
     def _check_format(self, expected, fmt, *args, **kwargs):
         fmt, expected = self._prepare(fmt, expected)
         self.assertEqual(f(fmt).format(*args, **kwargs), expected)
-        return expected, fmt, args, kwargs
 
     def _check_raises(self, expected_exception, fmt, *args, **kwargs):
         fmt = self._prepare(fmt)
@@ -44,7 +42,6 @@ class BaseFormatterTest(unittest.TestCase):
         else:
             raise self.failureException('%s not raised' %
                                         expected_exception.__name__)
-        return expected_exception, fmt, args, kwargs
 
     assert_raises_25 = _check_raises
 
@@ -288,7 +285,7 @@ class BaseFormatterTest(unittest.TestCase):
         #self.assertRaises(IndexError, f('{1}').format, 'abc')  # KeyError
         assert_raises(KeyError, '{x}')
         #self.assertRaises(ValueError, f("}{").format)
-        #self.assertRaises(ValueError, f("abc{0:{}").format)    # KeyError
+        #assert_raises(ValueError, 'abc{0:{}')                  # KeyError
         #self.assertRaises(ValueError, f("{0").format)
         #self.assertRaises(IndexError, f("{0.}").format)        # ValueError
         assert_raises(ValueError, '{0.}', 0)
@@ -306,7 +303,7 @@ class BaseFormatterTest(unittest.TestCase):
         #self.assertRaises(ValueError, f("{0!x}").format, 3)
         #self.assertRaises(ValueError, f("{0!}").format, 0)
         #self.assertRaises(ValueError, f("{0!rs}").format, 0)
-        #self.assertRaises(ValueError, f("{!}").format)         # KeyError
+        assert_raises(ValueError, '{!}')
         # self.assertRaises(IndexError, f("{:}").format)        # KeyError
         # self.assertRaises(IndexError, f("{:s}").format)       # KeyError
         # self.assertRaises(IndexError, f("{}").format)         # KeyError
@@ -335,7 +332,6 @@ class BaseFormatterTest(unittest.TestCase):
         self.assert_raises_25(KeyError, '{0}')
         self.assert_raises_25(KeyError, '{1}', 'abc')
         self.assert_raises_25(KeyError, 'abc{0:{}')     # ValueError
-        self.assert_raises_25(KeyError, '{!}')          # ValueError
         self.assert_raises_25(KeyError, '{:}')
         self.assert_raises_25(KeyError, '{:s}')
         self.assert_raises_25(KeyError, '{}')
@@ -518,6 +514,25 @@ class StringFormatterTest(BaseFormatterTest):
 
 class UnicodeFormatterTest(BaseFormatterTest):
     type2test = unicode
+
+    def test_mixed_unicode_str(self):
+
+        def test(expected, fmt, *args, **kwargs):
+            self.assertEqual(f(fmt).format(*args, **kwargs), expected)
+
+        # test mixing unicode and str
+        self.assertEqual(_strformat(u'abc', 's'), u'abc')
+        self.assertEqual(_strformat(u'abc', '->10s'), u'-------abc')
+
+        # test combining string and unicode
+        test(u'foobar', u"foo{0}", 'bar')
+
+        # This will try to convert the argument from unicode to str, which
+        #  will succeed
+        test('foobar', "foo{0}", u'bar')
+        # This will try to convert the argument from unicode to str, which
+        #  will fail
+        self.assertRaises(UnicodeEncodeError, f("foo{0}").format, u'\u1000bar')
 
 
 def suite():

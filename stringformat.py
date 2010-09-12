@@ -149,15 +149,16 @@ class FormattableString(object):
             return part[:len(part) // 2]
         repl = part[1:-1]
         field, _, format_spec = repl.partition(':')
-
-        literal, _, conversion = field.partition('!')
+        literal, sep, conversion = field.partition('!')
+        if sep and not conversion:
+            raise ValueError("end of format while looking for "
+                             "conversion specifier")
         name_parts = _field_part_re.findall(literal)
         if literal[:1] in '.[':
             # Auto-numbering
             if self._index is None:
-                raise ValueError(
-                    "cannot switch from manual field specification "
-                    "to automatic field numbering")
+                raise ValueError("cannot switch from manual field "
+                                 "specification to automatic field numbering")
             name = str(self._index)
             self._index += 1
             if not literal:
@@ -167,9 +168,8 @@ class FormattableString(object):
             if name.isdigit() and self._index is not None:
                 # Manual specification
                 if self._index:
-                    raise ValueError(
-                        "cannot switch from automatic field numbering "
-                        "to manual field specification")
+                    raise ValueError("cannot switch from automatic field "
+                                     "numbering to manual field specification")
                 self._index = None
         for k, v, tail in name_parts:
             if not v:
@@ -193,14 +193,20 @@ class FormattableString(object):
         if args:
             kwargs.update(dict((str(i), value)
                                for (i, value) in enumerate(args)))
+        # Encode arguments to ASCII, if format string is bytes
+        want_bytes = isinstance(self._string, str)
         params = {}
         for name, items in self._kwords.items():
             value = kwargs[name]
+            if want_bytes and isinstance(value, unicode):
+                value = str(value)
             for item in items:
                 parts, conv, spec = item
                 params[str(id(item))] = _format_field(value, parts, conv, spec)
         for name, items in self._nested.items():
             value = kwargs[name]
+            if want_bytes and isinstance(value, unicode):
+                value = str(value)
             for item in items:
                 parts, conv, spec = item
                 spec = spec % params
