@@ -92,7 +92,7 @@ def _strformat(value, format_spec=""):
     return rv
 
 
-def _format_field(value, parts, conv, spec):
+def _format_field(value, parts, conv, spec, want_bytes=False):
     """Format a replacement field."""
     for k, part, _ in parts:
         if k:
@@ -110,6 +110,8 @@ def _format_field(value, parts, conv, spec):
         value = value.strftime(str(spec))
     else:
         value = _strformat(value, spec)
+    if want_bytes and isinstance(value, unicode):
+        return str(value)
     return value
 
 
@@ -198,19 +200,17 @@ class FormattableString(object):
         params = {}
         for name, items in self._kwords.items():
             value = kwargs[name]
-            if want_bytes and isinstance(value, unicode):
-                value = str(value)
             for item in items:
                 parts, conv, spec = item
-                params[str(id(item))] = _format_field(value, parts, conv, spec)
+                params[str(id(item))] = _format_field(value, parts, conv, spec,
+                                                      want_bytes)
         for name, items in self._nested.items():
             value = kwargs[name]
-            if want_bytes and isinstance(value, unicode):
-                value = str(value)
             for item in items:
                 parts, conv, spec = item
                 spec = spec % params
-                params[str(id(item))] = _format_field(value, parts, conv, spec)
+                params[str(id(item))] = _format_field(value, parts, conv, spec,
+                                                      want_bytes)
         return self._string % params
 
 

@@ -105,7 +105,6 @@ class BaseFormatterTest(unittest.TestCase):
 
         # classes we'll use for testing
         class C:
-
             def __init__(self, x=100):
                 self._x = x
 
@@ -113,7 +112,6 @@ class BaseFormatterTest(unittest.TestCase):
                 return spec
 
         class D:
-
             def __init__(self, x):
                 self.x = x
 
@@ -122,7 +120,6 @@ class BaseFormatterTest(unittest.TestCase):
 
         # class with __str__, but no __format__
         class E:
-
             def __init__(self, x):
                 self.x = x
 
@@ -131,7 +128,6 @@ class BaseFormatterTest(unittest.TestCase):
 
         # class with __repr__, but no __format__ or __str__
         class F:
-
             def __init__(self, x):
                 self.x = x
 
@@ -140,7 +136,6 @@ class BaseFormatterTest(unittest.TestCase):
 
         # class with __format__ that forwards to string, for some format_spec's
         class G:
-
             def __init__(self, x):
                 self.x = x
 
@@ -154,17 +149,14 @@ class BaseFormatterTest(unittest.TestCase):
 
         # class that returns a bad type from __format__
         class H:
-
             def __format__(self, format_spec):
                 return 1.0
 
         class I(datetime.date):
-
             def __format__(self, format_spec):
                 return self.strftime(str(format_spec))
 
         class J(int):
-
             def __format__(self, format_spec):
                 return int.__format__(self * 2, format_spec)
 
@@ -325,6 +317,40 @@ class BaseFormatterTest(unittest.TestCase):
         #self.assertRaises(ValueError, format, "", "-")
         #self.assertRaises(ValueError, f("{0:=s}").format, '')
 
+    def test_format_auto_numbering(self):
+        test = self._check_format
+        assert_raises = self._check_raises
+
+        class C:
+            def __init__(self, x=100):
+                self._x = x
+
+            def __format__(self, spec):
+                return spec
+
+        test('10', '{}', 10)
+        test('s    ', '{:5}', 's')
+        test("'s'", '{!r}', 's')
+        test('10', '{._x}', C(10))
+        test('2', '{[1]}', [1, 2])
+        test('4', '{[a]}', {'a': 4, 'b': 2})
+        test('a0b1c', 'a{}b{}c', 0, 1)
+
+        test('a    x     b', 'a{:{}}b', 'x', '^10')
+        test('a0x14b', 'a{:{}x}b', 20, '#')
+
+        # can't mix and match numbering and auto-numbering
+        assert_raises(ValueError, '{}{1}', 1, 2)
+        assert_raises(ValueError, '{1}{}', 1, 2)
+        assert_raises(ValueError, '{:{1}}', 1, 2)
+        assert_raises(ValueError, '{0:{}}', 1, 2)
+
+        # can mix and match auto-numbering and named
+        test('test4', '{f}{}', 4, f='test')
+        test('4test', '{}{f}', 4, f='test')
+        test(' 1g3', '{:{f}}{g}{}', 1, 3, g='g', f=2)
+        test(' 14g', '{f:{}}{}{g}', 2, 4, f=1, g='g')
+
     def test_incompatibilities(self):
         # Differences with Python 2.7
 
@@ -429,7 +455,7 @@ if has_object_format:
         """
 
         # Monkey patch the _format_field to skip builtin method __format__
-        def _format_field(value, parts, conv, spec):
+        def _format_field(value, parts, conv, spec, want_bytes=False):
             for k, part, _ in parts:
                 if k:
                     if part.isdigit():
@@ -447,6 +473,8 @@ if has_object_format:
             else:
                 # Skip the __format__ method for builtin types
                 value = _strformat(value, spec)
+            if want_bytes and isinstance(value, unicode):
+                return str(value)
             return value
 
         # Monkey patch the _format_field to skip builtin method __format__
@@ -533,6 +561,16 @@ class UnicodeFormatterTest(BaseFormatterTest):
         # This will try to convert the argument from unicode to str, which
         #  will fail
         self.assertRaises(UnicodeEncodeError, f("foo{0}").format, u'\u1000bar')
+
+    if has_object_format:   # specific to Python >= 2.6
+        def test_format_subclass(self):
+            class U(unicode):
+                def __unicode__(self):
+                    return u'__unicode__ overridden'
+            u = U(u'xxx')
+
+            self.assertEqual("%s" % u, u'__unicode__ overridden')
+            self.assertEqual(f("{}").format(u), '__unicode__ overridden')
 
 
 def suite():
