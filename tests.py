@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#
+# Many tests were converted from the Python 2.7 standard library test suite.
 
 import unittest
 
@@ -46,6 +48,7 @@ class BaseFormatterTest(unittest.TestCase):
     assert_raises_25 = _check_raises
 
     def test_strformat(self):
+        # from Python 2.7 test suite
         test = self._check_strformat
 
         # def test(expected, fmt, value):
@@ -77,6 +80,7 @@ class BaseFormatterTest(unittest.TestCase):
         test(' ' * 10000000, '10000000', '')
 
     def test_format(self):
+        # from Python 2.7 test suite
         test = self._check_format
         assert_raises = self._check_raises
 
@@ -267,57 +271,59 @@ class BaseFormatterTest(unittest.TestCase):
              'hello world', width='10', precision='5')
 
         # test various errors
-        #self.assertRaises(ValueError, f('{').format)
-        #self.assertRaises(ValueError, f('}').format)
-        #self.assertRaises(ValueError, f('a{').format)
-        #self.assertRaises(ValueError, f('a}').format)
-        #self.assertRaises(ValueError, f('{a').format)
-        #self.assertRaises(ValueError, f('}a').format)
-        #self.assertRaises(IndexError, f('{0}').format)         # KeyError
-        #self.assertRaises(IndexError, f('{1}').format, 'abc')  # KeyError
+        # XXX failing tests are commented
+        # assert_raises(ValueError, '{')
+        # assert_raises(ValueError, '}')
+        # assert_raises(ValueError, 'a{')
+        # assert_raises(ValueError, 'a}')
+        # assert_raises(ValueError, '{a')
+        # assert_raises(ValueError, '}a')
+        # assert_raises(IndexError, '{0}')          # KeyError
+        # assert_raises(IndexError, '{1}', 'abc')   # KeyError
         assert_raises(KeyError, '{x}')
-        #self.assertRaises(ValueError, f("}{").format)
-        #assert_raises(ValueError, 'abc{0:{}')                  # KeyError
-        #self.assertRaises(ValueError, f("{0").format)
-        #self.assertRaises(IndexError, f("{0.}").format)        # ValueError
+        # assert_raises(ValueError, '}{')
+        # assert_raises(ValueError, 'abc{0:{}')     # KeyError
+        # assert_raises(ValueError, '{0')
+        # assert_raises(IndexError, '{0.}')         # ValueError
         assert_raises(ValueError, '{0.}', 0)
-        #self.assertRaises(IndexError, f("{0[}").format)        # ValueError
-        #XXX assert_raises(ValueError, '{0[}', [])
+        # assert_raises(IndexError, '{0[}')         # ValueError
+        # assert_raises(ValueError, '{0[}', [])
         assert_raises(KeyError, '{0]}')
         assert_raises(ValueError, '{0.[]}', 0)
         assert_raises(ValueError, '{0..foo}', 0)
         assert_raises(ValueError, '{0[0}', 0)
         assert_raises(ValueError, '{0[0:foo}', 0)
         assert_raises(KeyError, '{c]}')
-        #self.assertRaises(ValueError, f("{{ {{{0}}").format, 0)
-        #self.assertRaises(ValueError, f("{0}}").format, 0)
+        # assert_raises(ValueError, '{{ {{{0}}', 0)
+        # assert_raises(ValueError, '{0}}', 0)
         assert_raises(KeyError, '{foo}', bar=3)
-        #self.assertRaises(ValueError, f("{0!x}").format, 3)
-        #self.assertRaises(ValueError, f("{0!}").format, 0)
-        #self.assertRaises(ValueError, f("{0!rs}").format, 0)
+        # assert_raises(ValueError, '{0!x}', 3)
+        # assert_raises(ValueError, '{0!}', 0)
+        # assert_raises(ValueError, '{0!rs}', 0)
         assert_raises(ValueError, '{!}')
-        # self.assertRaises(IndexError, f("{:}").format)        # KeyError
-        # self.assertRaises(IndexError, f("{:s}").format)       # KeyError
-        # self.assertRaises(IndexError, f("{}").format)         # KeyError
+        # assert_raises(IndexError, '{:}')          # KeyError
+        # assert_raises(IndexError, '{:s}')         # KeyError
+        # assert_raises(IndexError, '{}')           # KeyError
 
         # issue 6089
-        #self.assertRaises(ValueError, f("{0[0]x}").format, [None])
-        #self.assertRaises(ValueError, f("{0[0](10)}").format, [None])
+        # assert_raises(ValueError, '{0[0]x}', [None])
+        # assert_raises(ValueError, '{0[0](10)}', [None])
 
         # can't have a replacement on the field name portion
         assert_raises(TypeError, '{0[{1}]}', 'abcdefg', 4)
 
         # exceed maximum recursion depth
-        #self.assertRaises(ValueError, f("{0:{1:{2}}}").format, 'abc', 's', '')
-        #self.assertRaises(ValueError, f("{0:{1:{2:{3:{4:{5:{6}}}}}}}").format,
-                          #0, 1, 2, 3, 4, 5, 6, 7)
+        # assert_raises(ValueError, '{0:{1:{2}}}', 'abc', 's', '')
+        # assert_raises(ValueError, '{0:{1:{2:{3:{4:{5:{6}}}}}}}',
+        #               0, 1, 2, 3, 4, 5, 6, 7)
 
         # string format spec errors
-        #self.assertRaises(ValueError, f("{0:-s}").format, '')
-        #self.assertRaises(ValueError, format, "", "-")
-        #self.assertRaises(ValueError, f("{0:=s}").format, '')
+        # assert_raises(ValueError, '{0:-s}', '')
+        # self.assertRaises(ValueError, _strformat, "", "-")
+        # assert_raises(ValueError, '{0:=s}', '')
 
     def test_format_auto_numbering(self):
+        # from Python 2.7 test suite
         test = self._check_format
         assert_raises = self._check_raises
 
@@ -544,6 +550,7 @@ class UnicodeFormatterTest(BaseFormatterTest):
     type2test = unicode
 
     def test_mixed_unicode_str(self):
+        # from Python 2.7 test suite
 
         def test(expected, fmt, *args, **kwargs):
             self.assertEqual(f(fmt).format(*args, **kwargs), expected)
@@ -564,6 +571,7 @@ class UnicodeFormatterTest(BaseFormatterTest):
 
     if has_object_format:   # specific to Python >= 2.6
         def test_format_subclass(self):
+            # from Python 2.7 test suite
             class U(unicode):
                 def __unicode__(self):
                     return u'__unicode__ overridden'
