@@ -385,7 +385,7 @@ class BaseFormatterTest(unittest.TestCase):
 
         import datetime
         d = datetime.date(2007, 8, 18)
-        test("Recorded on 2007-08-18", "Recorded on {0:%Y-%m-%d}", d)
+        test('Recorded on 2007-08-18', 'Recorded on {0:%Y-%m-%d}', d)
 
         # An Enum-like structure.
         class Enum(dict):
@@ -427,14 +427,19 @@ class BaseFormatterTest(unittest.TestCase):
         test('00-42.0', '{0:>07}', -42.)
         test('+##42.0', '{0:#=+7}', 42.)
         test('00+42.0', '{0:>+07}', 42.)
+        test('*', '{0:c}', 42)
+        test('*', '{0:c}', 810)
 
         # XXX broken
-        #test('42.000000%', '{0:%}', .42)        # TypeError
-        #test('+42,000', '{0:>+07,}', 42000)     # '0+42000'
+        # test('42.000000%', '{0:%}', .42)        # TypeError
+        # test('+42,000', '{0:>+07,}', 42000)     # '0+42000'
+        # test('4,398,046,511,104', '{0:,}', 1 << 42)
+        # test('1,024.03', '{0:,}', 1024.03)
 
         assert_raises(ValueError, '{0:>+07K}', 42.)
         assert_raises(ValueError, '{0:>07s}', .42)
         assert_raises(ValueError, '{0:>+07s}', '42')
+        assert_raises(ValueError, '{0:<+05c}', 42)
 
 
 # For Python >= 2.6, compare the result with the standard Python formatting
@@ -442,19 +447,17 @@ if has_object_format:
 
     builtin_function_or_method = type(len)
 
-    # Python 2.6 has some limitations (no auto-numbering)
-    _empty_field_errors = []
-    try:
-        '{}'.format(42)
-    except ValueError, exc:
-        # Python 2.6 raises ValueError: zero length field name in format
-        _empty_field_errors.append(repr(exc))
-
-    try:
-        '{.real}'.format(42)
-    except ValueError, exc:
-        # Python 2.6 raises ValueError: empty field name
-        _empty_field_errors.append(repr(exc))
+    # Python 2.6 has some limitations (no auto-numbering, no thousand)
+    _python26_limitations = []
+    for fmt in ('{}', '{.real}', '{0:,}'):
+        try:
+            fmt.format(42)
+        except ValueError, exc:
+            # Python 2.6 raises ValueErrors:
+            #  * "zero length field name in format"
+            #  * "empty field name"
+            #  * "Unknown format code ',' for object of type 'int'"
+            _python26_limitations.append(repr(exc))
 
     def _test_format(string, *args, **kwargs):
         """Compare with standard implementation.
@@ -519,7 +522,7 @@ if has_object_format:
             fmt = self._prepare(fmt)
             std_result, result = _test_format(fmt, *args, **kwargs)
             # Check same result or same error message
-            if std_result not in _empty_field_errors:
+            if std_result not in _python26_limitations:
                 self.assertEqual(std_result, result)
             return result
 

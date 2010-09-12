@@ -45,8 +45,12 @@ def _strformat(value, format_spec=""):
     if is_numeric and conversion == 'n':
         # Default to 'd' for ints and 'g' for floats
         conversion = 'd' if is_integer else 'g'
-    elif sign and not is_numeric:
-        raise ValueError('Sign not allowed in string format specifier')
+    elif sign:
+        if not is_numeric:
+            raise ValueError("Sign not allowed in string format specifier")
+        if conversion == 'c':
+            raise ValueError("Sign not allowed with integer "
+                             "format specifier 'c'")
     if comma:
         # TODO: thousand separator
         pass
@@ -54,6 +58,9 @@ def _strformat(value, format_spec=""):
         if ((is_numeric and conversion == 's') or
             (not is_integer and conversion in set('cdoxX'))):
             raise ValueError
+        if conversion == 'c':
+            conversion = 's'
+            value = chr(value % 256)
         rv = ('%' + prefix + precision + (conversion or 's')) % (value,)
     except ValueError:
         raise ValueError("Unknown format code %r for object of type %r" %
