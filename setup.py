@@ -19,7 +19,7 @@ from setuptools import setup
 
 setup(
     name='StringFormat',
-    version='0.1',
+    version='0.2',
     license='BSD',
     url='http://github.com/florentx/stringformat',
     author='Florent Xicluna',
@@ -27,7 +27,7 @@ setup(
     description='Advanced String Formatting for Python >= 2.5',
     long_description=__doc__,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
