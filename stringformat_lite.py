@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""String formatting for Python 2.5.
+"""Advanced string formatting for Python >= 2.4.
 
-This is an implementation of the advanced string formatting (PEP 3101).
+An implementation of the advanced string formatting (PEP 3101).
 
 CAUTION: this module is a stripped version, without strict error checking.
 
@@ -9,6 +9,17 @@ Author: Florent Xicluna
 """
 
 import re
+
+if hasattr(str, 'partition'):
+    def partition(s, sep):
+        return s.partition(sep)
+else:   # Python 2.4
+    def partition(s, sep):
+        try:
+            left, right = s.split(sep, 1)
+        except ValueError:
+            return s, '', ''
+        return left, sep, right
 
 _format_str_re = re.compile(
     r'((?<!{)(?:{{)+'                       # '{{'
@@ -29,6 +40,22 @@ _field_part_re = re.compile(
     r'(?(1)(?:\]|$)([^.[]+)?)'  # ']' and invalid tail
 )
 
+if hasattr(re, '__version__'):
+    _format_str_sub = _format_str_re.sub
+else:
+    # Python 2.4 fails to preserve the Unicode type
+    def _format_str_sub(repl, s):
+        if isinstance(s, unicode):
+            return unicode(_format_str_re.sub(repl, s))
+        return _format_str_re.sub(repl, s)
+
+if hasattr(int, '__index__'):
+    def _is_integer(value):
+        return hasattr(value, '__index__')
+else:   # Python 2.4
+    def _is_integer(value):
+        return isinstance(value, (int, long))
+
 
 def _strformat(value, format_spec=""):
     """Internal string formatter.
@@ -40,10 +67,10 @@ def _strformat(value, format_spec=""):
         raise ValueError('Invalid conversion specification')
     align, sign, prefix, width, comma, precision, conversion = m.groups()
     is_numeric = hasattr(value, '__float__')
-    is_integer = is_numeric and hasattr(value, '__index__')
+    is_integer = is_numeric and _is_integer(value)
     if is_numeric and conversion == 'n':
         # Default to 'd' for ints and 'g' for floats
-        conversion = 'd' if is_integer else 'g'
+        conversion = is_integer and 'd' or 'g'
     if conversion == 'c':
         conversion = 's'
         value = chr(value % 256)
@@ -62,7 +89,7 @@ def _strformat(value, format_spec=""):
         return rv
     fill, align = align[:-1], align[-1:]
     if not fill:
-        fill = '0' if zero else ' '
+        fill = zero and '0' or ' '
     if align == '^':
         padding = width - len(rv)
         # tweak the formatting if the padding is odd
@@ -93,7 +120,7 @@ def _format_field(value, parts, conv, spec):
         else:
             value = getattr(value, part)
     if conv:
-        value = ('%r' if (conv == 'r') else '%s') % (value,)
+        value = ((conv == 'r') and '%r' or '%s') % (value,)
     if hasattr(value, '__format__'):
         value = value.__format__(spec)
     elif hasattr(value, 'strftime') and spec:
@@ -122,7 +149,7 @@ class FormattableString(object):
         self._nested = {}
 
         self.format_string = format_string
-        self._string = _format_str_re.sub(self._prepare, format_string)
+        self._string = _format_str_sub(self._prepare, format_string)
 
     def __eq__(self, other):
         if isinstance(other, FormattableString):
@@ -138,8 +165,8 @@ class FormattableString(object):
             assert part == part[0] * len(part)
             return part[:len(part) // 2]
         repl = part[1:-1]
-        field, _, format_spec = repl.partition(':')
-        literal, sep, conversion = field.partition('!')
+        field, _, format_spec = partition(repl, ':')
+        literal, sep, conversion = partition(field, '!')
         name_parts = _field_part_re.findall(literal)
         if literal[:1] in '.[':
             # Auto-numbering

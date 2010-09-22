@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 StringFormat
-------------
+============
 
-StringFormat is an independent port of the Python 3 advanced string formatting
-to Python 2.5.  This implementation is pure Python.
+StringFormat is an independent port of the Python 3 advanced string
+formatting, compatible with Python 2.4 through 2.7.
+This implementation is pure Python.
 
 
 The advanced string formatting is officially included in the language
@@ -19,12 +20,12 @@ from setuptools import setup
 
 setup(
     name='StringFormat',
-    version='0.2',
+    version='0.3',
     license='BSD',
     url='http://github.com/florentx/stringformat',
     author='Florent Xicluna',
     author_email='florent.xicluna@gmail.com',
-    description='Advanced String Formatting for Python >= 2.5',
+    description='Advanced String Formatting for Python >= 2.4',
     long_description=__doc__,
     classifiers=[
         'Development Status :: 5 - Production/Stable',

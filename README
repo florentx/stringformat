@@ -1,8 +1,9 @@
 StringFormat
 ============
 
-StringFormat is an independent port of the Python 3 advanced string formatting
-to Python 2.5.  This implementation is pure Python.
+StringFormat is an independent port of the Python 3 advanced string
+formatting, compatible with Python 2.4 through 2.7.
+This implementation is pure Python.
 
 
 The advanced string formatting is officially included in the language

@@ -476,7 +476,7 @@ if has_object_format:
                 else:
                     value = getattr(value, part)
             if conv:
-                value = ('%r' if (conv == 'r') else '%s') % (value,)
+                value = ((conv == 'r') and '%r' or '%s') % (value,)
             format_value = getattr(value, '__format__', None)
             if format_value and (hasattr(value, 'strftime') or
                     not isinstance(format_value, builtin_function_or_method)):
@@ -497,9 +497,10 @@ if has_object_format:
         except Exception, exc:
             s1 = repr(exc)
         try:
-            s2 = repr(f(string).format(*args, **kwargs))
-        except Exception, exc:
-            s2 = repr(exc)
+            try:
+                s2 = repr(f(string).format(*args, **kwargs))
+            except Exception, exc:
+                s2 = repr(exc)
         finally:
             mod._format_field = original_format_field
         return s1, s2
