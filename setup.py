@@ -36,7 +36,7 @@ from setuptools import setup
 
 setup(
     name='StringFormat',
-    version='0.4',
+    version='0.5',
     license='BSD',
     url='http://github.com/florentx/stringformat',
     author='Florent Xicluna',
