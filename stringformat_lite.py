@@ -22,7 +22,8 @@ else:   # Python 2.4
         return left, sep, right
 
 _format_str_re = re.compile(
-    r'((?<!{)(?:{{)+'                       # '{{'
+    r'(%)'                                  # '%'
+    r'|((?<!{)(?:{{)+'                      # '{{'
     r'|(?:}})+(?!})'                        # '}}
     r'|{(?:[^{](?:[^{}]+|{[^{}]*})*)?})'    # replacement field
 )
@@ -160,6 +161,8 @@ class FormattableString(object):
     def _prepare(self, match):
         # Called for each replacement field.
         part = match.group(0)
+        if part == '%':
+            return '%%'
         if part[0] == part[-1]:
             # '{{' or '}}'
             assert part == part[0] * len(part)
@@ -212,13 +215,13 @@ def selftest():
     import datetime
     F = FormattableString
 
-    assert F(u"{0:{width}.{precision}s}").format('hello world',
-             width=8, precision=5) == u'hello   '
+    assert F("{0:{width}.{precision}s}").format('hello world',
+             width=8, precision=5) == 'hello   '
 
     d = datetime.date(2010, 9, 7)
-    assert F(u"The year is {0.year}").format(d) == u"The year is 2010"
-    assert F(u"Tested on {0:%Y-%m-%d}").format(d) == u"Tested on 2010-09-07"
-    print 'Test successful'
+    assert F("The year is {0.year}").format(d) == "The year is 2010"
+    assert F("Tested on {0:%Y-%m-%d}").format(d) == "Tested on 2010-09-07"
+    print('Test successful')
 
 if __name__ == '__main__':
     selftest()
