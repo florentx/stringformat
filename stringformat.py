@@ -330,8 +330,8 @@ def _patch_builtin_types():
         get_class_dict(cls)['format'] = format
 
 
-def init():
-    if not hasattr(str, 'format'):
+def init(force=False):
+    if force or not hasattr(str, 'format'):
         _patch_builtin_types()
 
 
@@ -342,7 +342,7 @@ def selftest():
     u = unicode
 
     # Initialize
-    _patch_builtin_types()
+    init(True)
 
     assert F(u("{0:{width}.{precision}s}")).format('hello world',
             width=8, precision=5) == u('hello   ')
