@@ -2,6 +2,7 @@
 #
 # Many tests were converted from the Python 2.7 standard library test suite.
 
+import sys
 import unittest
 
 from stringformat import FormattableString as f, _strformat
@@ -9,6 +10,16 @@ from stringformat import FormattableString as f, _strformat
 
 # object.__format__ does not exist in Python 2.5
 has_object_format = hasattr(object, '__format__')
+
+try:
+    u = unicode
+except NameError:
+    u = unicode = str
+python_3 = (str is unicode)
+
+
+def repr_exc():
+    return repr(sys.exc_info()[1])
 
 
 class BaseFormatterTest(unittest.TestCase):
@@ -381,7 +392,6 @@ class BaseFormatterTest(unittest.TestCase):
     def test_format_extra(self):
         # Additional tests
         test = self._check_format
-        assert_raises = self._check_raises
 
         import datetime
         d = datetime.date(2007, 8, 18)
@@ -401,6 +411,10 @@ class BaseFormatterTest(unittest.TestCase):
         test('42', '{.qsd]er[fe].QsD[ER].e].az.r[t[u][[X][Y][Z.]}',
              Enum({'qsd]er': {'fe': Enum(QsD={'ER': Enum({'e]':
              Enum(az=Enum(r={'t[u': {'[X': {'Y': {'Z.': 42}}}}))})})}}))
+
+        # The old-formatting '%s' is ignored.
+        test('42%s', '{}%s', 42)
+        test('abc: %s', 'abc: %s', 42)
 
     def test_format_numeric(self):
         test = self._check_format
@@ -428,7 +442,8 @@ class BaseFormatterTest(unittest.TestCase):
         test('+##42.0', '{0:#=+7}', 42.)
         test('00+42.0', '{0:>+07}', 42.)
         test('*', '{0:c}', 42)
-        test('*', '{0:c}', 810)
+        result = python_3 and chr(810) or '*'
+        test(result, '{0:c}', 810)
 
         # XXX broken
         # test('42.000000%', '{0:%}', .42)        # TypeError
@@ -452,12 +467,12 @@ if has_object_format:
     for fmt in ('{}', '{.real}', '{0:,}'):
         try:
             fmt.format(42)
-        except ValueError, exc:
+        except ValueError:
             # Python 2.6 raises ValueErrors:
             #  * "zero length field name in format"
             #  * "empty field name"
             #  * "Unknown format code ',' for object of type 'int'"
-            _python26_limitations.append(repr(exc))
+            _python26_limitations.append(repr_exc())
 
     def _test_format(string, *args, **kwargs):
         """Compare with standard implementation.
@@ -494,13 +509,13 @@ if has_object_format:
         mod._format_field = _format_field
         try:
             s1 = repr(string.format(*args, **kwargs))
-        except Exception, exc:
-            s1 = repr(exc)
+        except Exception:
+            s1 = repr_exc()
         try:
             try:
                 s2 = repr(f(string).format(*args, **kwargs))
-            except Exception, exc:
-                s2 = repr(exc)
+            except Exception:
+                s2 = repr_exc()
         finally:
             mod._format_field = original_format_field
         return s1, s2
@@ -530,8 +545,8 @@ if has_object_format:
         def _check_format(self, expected, fmt, *args, **kwargs):
             rv = self._compare_with_standard(fmt, *args, **kwargs)
             if expected is None:
-                print '\n%r.format(*%r, **%r)' % (fmt, args, kwargs)
-                print '***', rv
+                print('\n%r.format(*%r, **%r)' % (fmt, args, kwargs))
+                print('*** ' + rv)
             else:
                 check_format = super(BaseFormatterTest, self)._check_format
                 check_format(expected, fmt, *args, **kwargs)
@@ -539,8 +554,8 @@ if has_object_format:
         def _check_raises(self, expected_exception, fmt, *args, **kwargs):
             rv = self._compare_with_standard(fmt, *args, **kwargs)
             if expected_exception is None:
-                print '\n%r.format(*%r, **%r)' % (fmt, args, kwargs)
-                print '***', rv
+                print('\n%r.format(*%r, **%r)' % (fmt, args, kwargs))
+                print('*** ' + rv)
             else:
                 check_raises = super(BaseFormatterTest, self)._check_raises
                 check_raises(expected_exception, fmt, *args, **kwargs)
@@ -555,36 +570,42 @@ class StringFormatterTest(BaseFormatterTest):
 class UnicodeFormatterTest(BaseFormatterTest):
     type2test = unicode
 
-    def test_mixed_unicode_str(self):
-        # from Python 2.7 test suite
+    if not python_3:
+        def test_mixed_unicode_str(self):
+            # from Python 2.7 test suite
 
-        def test(expected, fmt, *args, **kwargs):
-            self.assertEqual(f(fmt).format(*args, **kwargs), expected)
+            def test(expected, fmt, *args, **kwargs):
+                self.assertEqual(f(fmt).format(*args, **kwargs), expected)
 
-        # test mixing unicode and str
-        self.assertEqual(_strformat(u'abc', 's'), u'abc')
-        self.assertEqual(_strformat(u'abc', '->10s'), u'-------abc')
+            # test mixing unicode and str
+            self.assertEqual(_strformat(u('abc'), 's'), u('abc'))
+            self.assertEqual(_strformat(u('abc'), '->10s'), u('-------abc'))
 
-        # test combining string and unicode
-        test(u'foobar', u"foo{0}", 'bar')
+            # test combining string and unicode
+            test(u('foobar'), u("foo{0}"), 'bar')
 
-        # This will try to convert the argument from unicode to str, which
-        #  will succeed
-        test('foobar', "foo{0}", u'bar')
-        # This will try to convert the argument from unicode to str, which
-        #  will fail
-        self.assertRaises(UnicodeEncodeError, f("foo{0}").format, u'\u1000bar')
+            # This will try to convert the argument from unicode to str,
+            # which will succeed
+            test('foobar', "foo{0}", u('bar'))
+            # This will try to convert the argument from unicode to str,
+            # which will fail
+            s = '\u1000bar'.decode('unicode_escape')
+            self.assertRaises(UnicodeEncodeError, f("foo{0}").format, s)
 
     if has_object_format:   # specific to Python >= 2.6
         def test_format_subclass(self):
             # from Python 2.7 test suite
             class U(unicode):
-                def __unicode__(self):
-                    return u'__unicode__ overridden'
-            u = U(u'xxx')
+                if python_3:
+                    def __str__(self):
+                        return '__unicode__ overridden'
+                else:
+                    def __unicode__(self):
+                        return u('__unicode__ overridden')
+            s = U('xxx')
 
-            self.assertEqual("%s" % u, u'__unicode__ overridden')
-            self.assertEqual(f("{}").format(u), '__unicode__ overridden')
+            self.assertEqual(f("{}").format(s), '__unicode__ overridden')
+            self.assertEqual("%s" % s, u('__unicode__ overridden'))
 
 
 def suite():
