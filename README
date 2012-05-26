@@ -2,12 +2,13 @@ StringFormat
 ============
 
 StringFormat is an independent port of the Python 3 advanced string
-formatting, compatible with Python 2.4 through 2.7.
+formatting, compatible with Python >= 2.4.
 This implementation is pure Python.
 
-Usage:
+Usage::
 
     import stringformat
+
     stringformat.init()
 
 
