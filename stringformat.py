@@ -8,6 +8,8 @@ Author: Florent Xicluna
 
 import re
 
+__all__ = ['FormattableString', 'init']
+
 if hasattr(str, 'partition'):
     def partition(s, sep):
         return s.partition(sep)
@@ -262,16 +264,91 @@ class FormattableString(object):
         return self._string % params
 
 
+# the code below is used to monkey patch builtins
+def _patch_builtin_types():
+    # originally from https://gist.github.com/295200 (Armin R.)
+    import ctypes
+    import sys
+    from types import DictProxyType
+
+    # figure out size of _Py_ssize_t
+    if hasattr(ctypes.pythonapi, 'Py_InitModule4_64'):
+        _Py_ssize_t = ctypes.c_int64
+    else:
+        _Py_ssize_t = ctypes.c_int
+
+    class _PyObject(ctypes.Structure):
+        pass
+    _PyObject._fields_ = [
+        ('ob_refcnt', _Py_ssize_t),
+        ('ob_type', ctypes.POINTER(_PyObject)),
+    ]
+
+    # python with trace
+    if hasattr(sys, 'getobjects'):
+        _PyObject._fields_[0:0] = [
+            ('_ob_next', ctypes.POINTER(_PyObject)),
+            ('_ob_prev', ctypes.POINTER(_PyObject)),
+        ]
+
+    class _DictProxy(_PyObject):
+        _fields_ = [('dict', ctypes.POINTER(_PyObject))]
+
+    def get_class_dict(cls):
+        d = getattr(cls, '__dict__', None)
+        if d is None:
+            raise TypeError('given class does not have a dictionary')
+        if isinstance(d, DictProxyType):
+            # Reveal dict
+            dp = _DictProxy.from_address(id(d))
+            ns = {}
+            ctypes.pythonapi.PyDict_SetItem(ctypes.py_object(ns),
+                                            ctypes.py_object(None),
+                                            dp.dict)
+            return ns[None]
+        return d
+
+    def format(self, *args, **kwargs):
+        """S.format(*args, **kwargs) -> string
+
+        Return a formatted version of S, using substitutions from args and kwargs.
+        The substitutions are identified by braces ('{' and '}').
+        """
+        return FormattableString(self).format(*args, **kwargs)
+
+    # This does the actual monkey patch on str and unicode
+    for cls in str, unicode:
+        get_class_dict(cls)['format'] = format
+
+
+def init():
+    if not hasattr(str, 'format'):
+        _patch_builtin_types()
+
+
 def selftest():
     import datetime
     F = FormattableString
+    d = datetime.date(2010, 9, 7)
+
+    # Initialize
+    _patch_builtin_types()
 
     assert F(u"{0:{width}.{precision}s}").format('hello world',
-             width=8, precision=5) == u'hello   '
-
-    d = datetime.date(2010, 9, 7)
+            width=8, precision=5) == u'hello   '
     assert F(u"The year is {0.year}").format(d) == u"The year is 2010"
     assert F(u"Tested on {0:%Y-%m-%d}").format(d) == u"Tested on 2010-09-07"
+
+    assert u"{0:{width}.{precision}s}".format('hello world',
+            width=8, precision=5) == u'hello   '
+    assert u"The year is {0.year}".format(d) == u"The year is 2010"
+    assert u"Tested on {0:%Y-%m-%d}".format(d) == u"Tested on 2010-09-07"
+
+    assert "{0:{width}.{precision}s}".format('hello world',
+            width=8, precision=5) == 'hello   '
+    assert "The year is {0.year}".format(d) == "The year is 2010"
+    assert "Tested on {0:%Y-%m-%d}".format(d) == "Tested on 2010-09-07"
+
     print 'Test successful'
 
 if __name__ == '__main__':

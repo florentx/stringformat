@@ -7,6 +7,11 @@ StringFormat is an independent port of the Python 3 advanced string
 formatting, compatible with Python 2.4 through 2.7.
 This implementation is pure Python.
 
+Usage:
+
+    import stringformat
+    stringformat.init()
+
 
 The advanced string formatting is officially included in the language
 since Python 2.6.
@@ -20,7 +25,7 @@ from setuptools import setup
 
 setup(
     name='StringFormat',
-    version='0.3',
+    version='0.4',
     license='BSD',
     url='http://github.com/florentx/stringformat',
     author='Florent Xicluna',
